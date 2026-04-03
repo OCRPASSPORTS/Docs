@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 24.8.1.2 (Linux)"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="00:00:00"/>
+	<style type="text/css">
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		p { line-height: 115%; margin-bottom: 0.1in; background: transparent }
+		pre { background: transparent }
+		pre.western { font-family: "Liberation Mono", monospace; font-size: 10pt }
+		pre.cjk { font-family: "NSimSun", monospace; font-size: 10pt }
+		pre.ctl { font-family: "Liberation Mono", monospace; font-size: 10pt }
+	</style>
+</head>
+<body lang="en-US" link="#000080" vlink="#800000" dir="ltr"><pre class="western">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ar&quot; dir=&quot;rtl&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;<span lang="hi-IN">استخراج بيانات الجواز محلياً</span>&lt;/title&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js&quot;&gt;&lt;/script&gt;
+    &lt;style&gt;
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; text-align: center; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; }
+        .alert { background-color: #e8f4fd; color: #00529b; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 0.9em; border: 1px solid #bce8f1; }
+        input[type=&quot;file&quot;] { margin: 20px 0; }
+        button { background-color: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #219150; }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; color: #e67e22; }
+        #downloadBtn { display: none; background-color: #2980b9; margin-top: 20px; text-decoration: none; padding: 12px 24px; color: white; border-radius: 5px; display: inline-block; }
+        #downloadBtn:hover { background-color: #1c5980; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;div class=&quot;container&quot;&gt;
+    &lt;h1&gt;<span lang="hi-IN">استخراج بيانات جواز السفر 🛂</span>&lt;/h1&gt;
+    &lt;div class=&quot;alert&quot;&gt;
+        🔒 &lt;strong&gt;<span lang="hi-IN">خصوصية تامة</span>:&lt;/strong&gt; <span lang="hi-IN">تتم معالجة الصورة داخل جهازك فقط</span>. <span lang="hi-IN">لا يتم رفع أو حفظ أي صور على الإنترنت</span>.
+    &lt;/div&gt;
+
+    &lt;input type=&quot;file&quot; id=&quot;passportImage&quot; accept=&quot;image/*&quot;&gt;
+    &lt;br&gt;
+    &lt;button id=&quot;extractBtn&quot; onclick=&quot;processImage()&quot;&gt;<span lang="hi-IN">استخراج البيانات الآن</span>&lt;/button&gt;
+
+    &lt;div id=&quot;status&quot;&gt;&lt;/div&gt;
+    
+    &lt;a id=&quot;downloadBtn&quot; style=&quot;display: none;&quot;&gt;<span lang="hi-IN">تحميل البيانات </span>(.txt) 💾&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+    async function processImage() {
+        const fileInput = document.getElementById('passportImage');
+        const statusDiv = document.getElementById('status');
+        const extractBtn = document.getElementById('extractBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        if (fileInput.files.length === 0) {
+            alert(&quot;<span lang="hi-IN">الرجاء اختيار صورة جواز السفر أولاً</span>.&quot;);
+            return;
+        }
+
+        const file = fileInput.files[0];
+        
+        // <span lang="hi-IN">تغيير حالة الواجهة</span>
+        extractBtn.disabled = true;
+        downloadBtn.style.display = &quot;none&quot;;
+        statusDiv.innerText = &quot;<span lang="hi-IN">جاري قراءة الصورة وتفكيك الشفرة </span>(MRZ)... <span lang="hi-IN">يرجى الانتظار</span>.&quot;;
+
+        try {
+            // <span lang="hi-IN">استخدام </span>Tesseract <span lang="hi-IN">لقراءة النص من الصورة</span>
+            const result = await Tesseract.recognize(file, 'eng', {
+                logger: m =&gt; {
+                    if(m.status === 'recognizing text'){
+                        statusDiv.innerText = `<span lang="hi-IN">جاري التحليل</span>: ${Math.round(m.progress * 100)}%`;
+                    }
+                }
+            });
+
+            const text = result.data.text;
+            
+            // <span lang="hi-IN">البحث عن سطور الـ </span>MRZ (<span lang="hi-IN">التي تحتوي على علامات المتباينة </span>&lt;&lt;&lt;&lt;)
+            const lines = text.split('\n');
+            const mrzLines = lines.filter(line =&gt; line.includes('&lt;&lt;'));
+
+            if (mrzLines.length &gt;= 2) {
+                statusDiv.innerText = &quot;✅ <span lang="hi-IN">تم استخراج البيانات بنجاح</span>!&quot;;
+                statusDiv.style.color = &quot;#27ae60&quot;;
+                
+                // <span lang="hi-IN">تجهيز النص ليتم تحميله</span>
+                // <span lang="hi-IN">ملاحظة</span>: <span lang="hi-IN">هنا قمنا بسحب السطور المشفرة كاملة، يمكنك برمجياً تفكيكها لاحقاً</span>
+                let txtContent = &quot;=== <span lang="hi-IN">بيانات جواز السفر المستخرجة </span>===\n\n&quot;;
+                txtContent += &quot;<span lang="hi-IN">الشفرة المقروءة </span>(MRZ):\n&quot;;
+                mrzLines.forEach(line =&gt; {
+                    txtContent += line.replace(/\s/g, '') + &quot;\n&quot;; // <span lang="hi-IN">تنظيف المسافات العشوائية</span>
+                });
+
+                // <span lang="hi-IN">إنشاء ملف </span>.txt <span lang="hi-IN">داخل المتصفح</span>
+                const blob = new Blob([txtContent], { type: &quot;text/plain;charset=utf-8&quot; });
+                const url = URL.createObjectURL(blob);
+                
+                // <span lang="hi-IN">تفعيل زر التحميل</span>
+                downloadBtn.href = url;
+                downloadBtn.download = &quot;Passport_Data.txt&quot;;
+                downloadBtn.style.display = &quot;inline-block&quot;;
+
+            } else {
+                statusDiv.innerText = &quot;❌ <span lang="hi-IN">لم يتم العثور على شفرة الجواز </span>(MRZ). <span lang="hi-IN">تأكد من وضوح الصورة أسفل الجواز</span>.&quot;;
+                statusDiv.style.color = &quot;#e74c3c&quot;;
+            }
+
+        } catch (error) {
+            statusDiv.innerText = &quot;<span lang="hi-IN">حدث خطأ أثناء القراءة</span>.&quot;;
+            console.error(error);
+        } finally {
+            extractBtn.disabled = false;
+        }
+    }
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</body>
+</html>
